@@ -1,9 +1,9 @@
 plugins {
-    id("java")
+    id("application")
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "com.ethamorim"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -12,6 +12,10 @@ repositories {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+application {
+    mainClass = "com.ethamorim.betterwindcharge.BetterWindChargePlugin"
 }
 
 tasks.test {
