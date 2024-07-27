@@ -15,6 +15,9 @@ dependencies {
     // MariaDB JDBC
     implementation("org.mariadb.jdbc:mariadb-java-client:3.4.0")
 
+    // H2 Database for testing
+    testImplementation("com.h2database:h2:2.3.230")
+
     // Hibernate ORM
     implementation("org.hibernate.orm:hibernate-core:6.5.2.Final")
     implementation("org.hibernate.validator:hibernate-validator:8.0.0.Final")
