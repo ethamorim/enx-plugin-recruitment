@@ -20,6 +20,10 @@ public class PersistenceTest {
 
     static SessionFactory sessionFactory;
 
+    /**
+     * Inicia a conexão com uma instância de banco de dados na memória
+     * antes que os testes sejam executados.
+     */
     @BeforeAll
     static void bootstrapHibernate() {
         sessionFactory = new Configuration()
@@ -34,6 +38,9 @@ public class PersistenceTest {
         sessionFactory.getSchemaManager().exportMappedObjects(true);
     }
 
+    /**
+     * A cada teste executado, limpa todos os registros das tabelas.
+     */
     @AfterEach
     void cleanUp() {
         sessionFactory.inTransaction(session -> {
@@ -44,9 +51,9 @@ public class PersistenceTest {
         });
     }
 
-    /*
-        Testa a persistência de PlayerEntity
-        e verifica por valores padrões não definidos na criação.
+    /**
+     * Testa a persistência de PlayerEntity
+     * e verifica por valores padrões não definidos na criação.
      */
     @Test
     void shouldPersistPlayer() {
@@ -69,9 +76,9 @@ public class PersistenceTest {
         });
     }
 
-    /*
-        Testa a persistência de HomeEntity
-        buscando por sua associação forte PlayerEntity
+    /**
+     * Testa a persistência de HomeEntity
+     * buscando através de sua associação forte PlayerEntity
      */
     @Test
     void shouldPersistHome() {

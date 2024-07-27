@@ -5,25 +5,56 @@ import org.hibernate.annotations.NaturalId;
 
 import java.util.UUID;
 
+/**
+ * Entidade que representa o jogador.
+ * Carrega informações básicas de identidade e preferências de configurações.
+ *
+ * @author ethamorim
+ */
 @Entity
 public class PlayerEntity {
     public PlayerEntity() {}
 
+    /**
+     * Id do usuário.
+     * Chave primária não é o UUID por questões de performance
+     * e possíveis alterações.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
 
+    /**
+     * UUID do jogador.
+     * Não está anotado como @NaturalId pois nem sempre se
+     * tem o UUID do jogador quando comparado ao nickname,
+     * e anotar 2 atributos com @NaturalId faz com que
+     * Hibernate exija ambos quando usado `session.byNaturalId`
+     */
     @Column(unique = true, nullable = false)
     UUID uuid;
 
+    /**
+     * Nickname do jogador nas sessões do servidor.
+     */
     @NaturalId
     @Column(nullable = false)
     String nickname;
 
+    /**
+     * O intervalo em milissegundos no qual o jogador
+     * pode utilizar o comando home novamente.
+     */
     short cooldown;
 
+    /**
+     * Ativa partículas ao se teletransportar caso `true`
+     */
     boolean particlesActive;
 
+    /*
+        Getters e setters
+     */
     public int getId() {
         return id;
     }
