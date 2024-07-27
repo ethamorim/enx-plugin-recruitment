@@ -22,7 +22,7 @@ public class PersistenceTest {
     @BeforeAll
     static void bootstrapHibernate() {
         sessionFactory = new Configuration()
-                .addAnnotatedClass(Player.class)
+                .addAnnotatedClass(PlayerEntity.class)
                 .setProperty(JAKARTA_JDBC_URL, "jdbc:h2:mem:db1")
                 .setProperty(SHOW_SQL, true)
                 .setProperty(FORMAT_SQL, true)
@@ -33,13 +33,13 @@ public class PersistenceTest {
     }
 
     /*
-        Testa a persistência de Player
+        Testa a persistência de PlayerEntity
         e verifica por valores padrões não definidos na criação.
      */
     @Test
     void shouldPersistPlayer() {
         sessionFactory.inTransaction(session -> {
-            var player = new Player();
+            var player = new PlayerEntity();
             player.setUuid(UUID.randomUUID());
             player.setNickname("enx");
 
@@ -48,11 +48,11 @@ public class PersistenceTest {
 
         sessionFactory.inSession(session -> {
             var builder = sessionFactory.getCriteriaBuilder();
-            var query = builder.createQuery(Player.class);
-            var playerRoot = query.from(Player.class);
-            var where = builder.equal(playerRoot.get(Player_.NICKNAME), "enx");
+            var query = builder.createQuery(PlayerEntity.class);
+            var playerRoot = query.from(PlayerEntity.class);
+            var where = builder.equal(playerRoot.get(PlayerEntity_.NICKNAME), "enx");
             query.select(playerRoot).where(where);
-            Player playerTuple = session.createSelectionQuery(query)
+            PlayerEntity playerTuple = session.createSelectionQuery(query)
                     .getSingleResult();
 
             Assertions.assertNotNull(playerTuple);

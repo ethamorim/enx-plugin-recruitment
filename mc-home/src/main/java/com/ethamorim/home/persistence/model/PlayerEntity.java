@@ -6,8 +6,8 @@ import org.hibernate.annotations.NaturalId;
 import java.util.UUID;
 
 @Entity
-public class Player {
-    public Player() {}
+public class PlayerEntity {
+    public PlayerEntity() {}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
