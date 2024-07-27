@@ -4,6 +4,7 @@ import static org.hibernate.cfg.AvailableSettings.*;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ public class PersistenceTest {
     static void bootstrapHibernate() {
         sessionFactory = new Configuration()
                 .addAnnotatedClass(PlayerEntity.class)
+                .addAnnotatedClass(HomeEntity.class)
                 .setProperty(JAKARTA_JDBC_URL, "jdbc:h2:mem:db1")
                 .setProperty(SHOW_SQL, true)
                 .setProperty(FORMAT_SQL, true)
@@ -30,6 +32,16 @@ public class PersistenceTest {
                 .setProperty("hibernate.agroal.maxSize", 5)
                 .buildSessionFactory();
         sessionFactory.getSchemaManager().exportMappedObjects(true);
+    }
+
+    @AfterEach
+    void cleanUp() {
+        sessionFactory.inTransaction(session -> {
+            session.createMutationQuery("delete from HomeEntity")
+                    .executeUpdate();
+            session.createMutationQuery("delete from PlayerEntity")
+                    .executeUpdate();
+        });
     }
 
     /*
@@ -44,21 +56,51 @@ public class PersistenceTest {
             player.setNickname("enx");
 
             session.persist(player);
+            session.flush();
         });
 
         sessionFactory.inSession(session -> {
-            var builder = sessionFactory.getCriteriaBuilder();
-            var query = builder.createQuery(PlayerEntity.class);
-            var playerRoot = query.from(PlayerEntity.class);
-            var where = builder.equal(playerRoot.get(PlayerEntity_.NICKNAME), "enx");
-            query.select(playerRoot).where(where);
-            PlayerEntity playerTuple = session.createSelectionQuery(query)
-                    .getSingleResult();
+            PlayerEntity player = session.bySimpleNaturalId(PlayerEntity.class)
+                    .load("enx");
+            Assertions.assertNotNull(player);
+            Assertions.assertEquals("enx", player.getNickname());
+            Assertions.assertEquals(0, player.getCooldown());
+            Assertions.assertFalse(player.isParticlesActive());
+        });
+    }
 
-            Assertions.assertNotNull(playerTuple);
-            Assertions.assertEquals("enx", playerTuple.getNickname());
-            Assertions.assertEquals(0, playerTuple.getCooldown());
-            Assertions.assertFalse(playerTuple.isParticlesActive());
+    /*
+        Testa a persistência de HomeEntity
+        buscando por sua associação forte PlayerEntity
+     */
+    @Test
+    void shouldPersistHome() {
+        sessionFactory.inTransaction(session -> {
+            var player = new PlayerEntity();
+            player.setUuid(UUID.randomUUID());
+            player.setNickname("enx");
+
+            var home = new HomeEntity();
+            home.setName("casa");
+            home.setPlayer(player);
+            home.setLocation(new HomeLocation(0f, 0f, 0f));
+
+            session.persist(player);
+            session.persist(home);
+            session.flush();
+        });
+
+        sessionFactory.inSession(session -> {
+            PlayerEntity player = session.bySimpleNaturalId(PlayerEntity.class)
+                    .load("enx");
+            Assertions.assertNotNull(player);
+
+            HomeEntity home = session.byNaturalId(HomeEntity.class)
+                    .using(HomeEntity_.NAME, "casa")
+                    .using(HomeEntity_.PLAYER, player)
+                    .load();
+            Assertions.assertNotNull(home);
+            Assertions.assertEquals("casa", home.getName());
         });
     }
 
