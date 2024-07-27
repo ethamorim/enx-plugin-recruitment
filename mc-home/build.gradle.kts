@@ -1,10 +1,11 @@
 plugins {
+    // Use ShadowJar to create fat jars of the plugin (a .jar
+    // with all the dependencies used in the source code,
+    // so it'll run on the Spigot Server)
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+
     // Using shared build logic to build the subprojects
     id("mc-plugin-conventions")
-}
-
-application {
-    mainClass = "com.ethamorim.home.HomePlugin"
 }
 
 dependencies {

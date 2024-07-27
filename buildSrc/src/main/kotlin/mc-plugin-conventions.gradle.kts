@@ -1,5 +1,5 @@
 plugins {
-    id("application")
+    id("java")
 }
 
 group = "com.ethamorim"
@@ -7,6 +7,7 @@ version = "1.0"
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
     maven {
         // Spigot API repository
         name = "spigotmc-repo"
