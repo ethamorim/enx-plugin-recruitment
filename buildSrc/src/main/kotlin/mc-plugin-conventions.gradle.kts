@@ -8,17 +8,18 @@ version = "1.0"
 repositories {
     mavenCentral()
     maven {
+        // Spigot API repository
         name = "spigotmc-repo"
         url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     }
     maven {
+        // Repository Spigot API needs
         name = "sonatype"
         url = uri("https://oss.sonatype.org/content/groups/public/")
     }
 }
 
 dependencies {
-
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
