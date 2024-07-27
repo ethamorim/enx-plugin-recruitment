@@ -13,12 +13,11 @@ public class PlayerEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
 
-    @NaturalId
     @Column(unique = true, nullable = false)
     UUID uuid;
 
     @NaturalId
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     String nickname;
 
     short cooldown;
