@@ -1,0 +1,4 @@
+name: mc-home
+version: '1.0'
+main: com.ethamorim.home.HomePlugin
+api-version: '1.21'

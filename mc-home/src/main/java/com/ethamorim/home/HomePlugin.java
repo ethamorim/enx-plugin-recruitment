@@ -1,8 +1,11 @@
 package com.ethamorim.home;
 
-public class HomePlugin {
+import org.bukkit.plugin.java.JavaPlugin;
 
-    public static void main(String[] args) {
-        System.out.println("Hello World from Home Plugin!");
+public class HomePlugin extends JavaPlugin {
+
+    @Override
+    public void onEnable() {
+        System.out.println("Home Plugin Enabled!!!!!");
     }
 }
