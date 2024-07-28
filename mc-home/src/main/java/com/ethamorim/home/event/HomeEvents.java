@@ -6,6 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.time.Instant;
+
 public class HomeEvents implements Listener {
 
     @EventHandler
@@ -19,6 +21,8 @@ public class HomeEvents implements Listener {
                 var entity = new PlayerEntity();
                 entity.setUuid(joined.getUniqueId());
                 entity.setNickname(joined.getName());
+                entity.setLastIssued(Instant.now());
+                entity.setCooldown(8000);
 
                 session.persist(entity);
                 session.flush();
