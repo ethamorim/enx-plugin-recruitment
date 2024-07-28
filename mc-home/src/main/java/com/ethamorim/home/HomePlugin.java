@@ -27,6 +27,6 @@ public class HomePlugin extends JavaPlugin {
                 .registerEvents(new HomeEvents(), this);
 
         var homeCommand = getCommand("home");
-        if (homeCommand != null) homeCommand.setExecutor(new HomeCommand());
+        if (homeCommand != null) homeCommand.setExecutor(new HomeCommand(this));
     }
 }
