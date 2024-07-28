@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.*;
 import java.util.UUID;
 
 /**
@@ -70,6 +71,7 @@ public class PersistenceTest {
         sessionFactory.inSession(session -> {
             var player = PluginQueries.getPlayerByNaturalId(session, "enx");
             Assertions.assertTrue(player.isPresent());
+            Assertions.assertNotEquals(0, player.get().getId());
             Assertions.assertEquals("enx", player.get().getNickname());
             Assertions.assertEquals(0, player.get().getCooldown());
             Assertions.assertFalse(player.get().isParticlesActive());
@@ -103,8 +105,55 @@ public class PersistenceTest {
 
             var home = PluginQueries.getHomeByNaturalId(session, "casa", player.get());
             Assertions.assertTrue(home.isPresent());
+            Assertions.assertNotEquals(0, home.get().getId());
             Assertions.assertEquals("casa", home.get().getName());
         });
     }
 
+    /**
+     * Verifica se updates usando `merge` com entidades desanexadas funciona sem erros.
+     * Utiliza o atributo `lastIssued` de `PlayerEntity` para fazer a alteração
+     * e comparação.
+     */
+    @Test
+    void shouldUpdatePlayer() {
+        sessionFactory.inTransaction(session -> {
+            var player = new PlayerEntity();
+            player.setNickname("enx");
+            player.setUuid(UUID.randomUUID());
+
+            var lastIssued = ZonedDateTime.of(
+                        LocalDateTime.of(2024, Month.JULY, 28, 15, 44),
+                        ZoneId.systemDefault())
+                .toInstant();
+            player.setLastIssued(lastIssued);
+            session.persist(player);
+            session.flush();
+        });
+
+        var optionalPlayer = sessionFactory.fromSession(session ->
+                PluginQueries.getPlayerByNaturalId(session, "enx"));
+        Assertions.assertTrue(optionalPlayer.isPresent());
+        var player = optionalPlayer.get();
+
+        var timeToCompare = ZonedDateTime.of(
+                    LocalDateTime.of(2024, Month.JULY, 28, 15, 44),
+                    ZoneId.systemDefault())
+            .toInstant();
+        Assertions.assertEquals(0, player.getLastIssued().compareTo(timeToCompare));
+
+        sessionFactory.inTransaction(session -> {
+            player.setLastIssued(Instant.now());
+            session.merge(player);
+            session.flush();
+        });
+
+        var playerAfterUpdate = sessionFactory.fromSession(session ->
+                PluginQueries.getPlayerByNaturalId(session, "enx"))
+                .orElseThrow();
+
+        int comparison = playerAfterUpdate.getLastIssued().compareTo(timeToCompare);
+        Assertions.assertTrue(comparison > 0);
+
+    }
 }
