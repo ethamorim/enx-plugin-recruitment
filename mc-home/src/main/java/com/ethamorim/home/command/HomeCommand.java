@@ -2,16 +2,17 @@ package com.ethamorim.home.command;
 
 import static com.ethamorim.home.persistence.HibernateConnection.sessionFactory;
 
+import com.ethamorim.home.persistence.PluginQueries;
 import com.ethamorim.home.persistence.model.*;
+import jakarta.persistence.EntityExistsException;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.hibernate.HibernateException;
-
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 public class HomeCommand implements CommandExecutor {
 
@@ -24,29 +25,14 @@ public class HomeCommand implements CommandExecutor {
     ) {
         if (sender instanceof Player playerSender) {
             try {
-                if (args.length == 0) throw new CommandException(
-                        "Invalid command syntax: /home <name>");
+                if (args.length == 0) throw new CommandException("Invalid command syntax: /home <name>");
 
                 if (args[0].equals("set")) {
-                    if (args.length != 2) throw new CommandException(
-                            "Invalid command syntax: /home set <name>");
+                    if (args.length != 2) throw new CommandException("Invalid command syntax: /home set <name>");
                     return setNewHome(playerSender, args[1]);
                 } else {
-                    var name = args[0];
-                    var homeEntity = sessionFactory.fromSession(session -> {
-                        var playerEntity = session.bySimpleNaturalId(PlayerEntity.class)
-                                .load(playerSender.getName());
-
-                        var home = session.byNaturalId(HomeEntity.class)
-                                .using(HomeEntity_.NAME, name)
-                                .using(HomeEntity_.PLAYER, playerEntity)
-                                .load();
-                        return home != null ? Optional.of(home) : Optional.empty();
-                    });
-                    if (homeEntity.isEmpty())
-                        throw new CommandException("No home found with name " + name);
+                    return accessHome(playerSender, args[0]);
                 }
-                return true;
             } catch (CommandException e) {
                 sender.sendMessage(ChatColor.RED + e.getMessage());
             }
@@ -57,15 +43,14 @@ public class HomeCommand implements CommandExecutor {
     private boolean setNewHome(Player playerSender, String name) {
         try {
             sessionFactory.inTransaction(session -> {
-                var playerRecord = session
-                        .bySimpleNaturalId(PlayerEntity.class)
-                        .load(playerSender.getName());
-                var registeredHome = session.byNaturalId(HomeEntity.class)
-                        .using(HomeEntity_.NAME, name)
-                        .using(HomeEntity_.PLAYER, playerRecord)
-                        .load();
-                if (registeredHome != null)
-                    throw new HibernateException("Home with name '" + name + "' already registered");
+                var playerRecord = PluginQueries
+                        .getPlayerByNaturalId(session, playerSender.getName())
+                        .orElseThrow();
+
+                var registeredHome = PluginQueries
+                        .getHomeByNaturalId(session, name, playerRecord);
+                if (registeredHome.isPresent())
+                    throw new EntityExistsException("Home with name '" + name + "' already registered");
 
                 var newHome = new HomeEntity();
                 newHome.setName(name);
@@ -83,8 +68,33 @@ public class HomeCommand implements CommandExecutor {
             });
             playerSender.sendMessage(ChatColor.GREEN + "New home created with name " + name);
             return true;
-        } catch (HibernateException e) {
+        } catch (EntityExistsException e) {
             throw new CommandException("Something went wrong: " + e.getMessage());
+        } catch (NoSuchElementException e) {
+            throw new CommandException("Operation failed while trying to register a home");
+        }
+    }
+
+    private boolean accessHome(Player playerSender, String name) {
+        try {
+            var homeEntity = sessionFactory.fromSession(session -> {
+                var playerEntity = PluginQueries
+                        .getPlayerByNaturalId(session, playerSender.getName())
+                        .orElseThrow();
+                return PluginQueries.getHomeByNaturalId(session, name, playerEntity);
+            });
+            if (homeEntity.isEmpty())
+                throw new CommandException("No home found with name " + name);
+            var savedLocation = homeEntity.get().getLocation();
+            playerSender.teleport(new Location(
+                    playerSender.getWorld(),
+                    savedLocation.x(),
+                    savedLocation.y(),
+                    savedLocation.z()
+            ));
+            return true;
+        } catch (NoSuchElementException e) {
+            throw new CommandException("Operation failed while trying to access home");
         }
     }
 }

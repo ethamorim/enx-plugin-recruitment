@@ -2,6 +2,7 @@ package com.ethamorim.home.persistence.model;
 
 import static org.hibernate.cfg.AvailableSettings.*;
 
+import com.ethamorim.home.persistence.PluginQueries;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.AfterEach;
@@ -67,12 +68,11 @@ public class PersistenceTest {
         });
 
         sessionFactory.inSession(session -> {
-            PlayerEntity player = session.bySimpleNaturalId(PlayerEntity.class)
-                    .load("enx");
-            Assertions.assertNotNull(player);
-            Assertions.assertEquals("enx", player.getNickname());
-            Assertions.assertEquals(0, player.getCooldown());
-            Assertions.assertFalse(player.isParticlesActive());
+            var player = PluginQueries.getPlayerByNaturalId(session, "enx");
+            Assertions.assertTrue(player.isPresent());
+            Assertions.assertEquals("enx", player.get().getNickname());
+            Assertions.assertEquals(0, player.get().getCooldown());
+            Assertions.assertFalse(player.get().isParticlesActive());
         });
     }
 
@@ -98,16 +98,12 @@ public class PersistenceTest {
         });
 
         sessionFactory.inSession(session -> {
-            PlayerEntity player = session.bySimpleNaturalId(PlayerEntity.class)
-                    .load("enx");
-            Assertions.assertNotNull(player);
+            var player = PluginQueries.getPlayerByNaturalId(session, "enx");
+            Assertions.assertTrue(player.isPresent());
 
-            HomeEntity home = session.byNaturalId(HomeEntity.class)
-                    .using(HomeEntity_.NAME, "casa")
-                    .using(HomeEntity_.PLAYER, player)
-                    .load();
-            Assertions.assertNotNull(home);
-            Assertions.assertEquals("casa", home.getName());
+            var home = PluginQueries.getHomeByNaturalId(session, "casa", player.get());
+            Assertions.assertTrue(home.isPresent());
+            Assertions.assertEquals("casa", home.get().getName());
         });
     }
 
