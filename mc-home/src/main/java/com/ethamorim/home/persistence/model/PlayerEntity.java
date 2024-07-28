@@ -3,6 +3,7 @@ package com.ethamorim.home.persistence.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.NaturalId;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -45,12 +46,20 @@ public class PlayerEntity {
      * O intervalo em milissegundos no qual o jogador
      * pode utilizar o comando home novamente.
      */
-    short cooldown;
+    int cooldown;
 
     /**
      * Ativa partículas ao se teletransportar caso `true`
      */
     boolean particlesActive;
+
+    /**
+     * Determina a última vez que o jogador usou
+     * o comando de /home.
+     * Usado em conjunto com `cooldown` para determinar
+     * se o jogador pode usar o comando novamente.
+     */
+    Instant lastIssued;
 
     /*
         Getters e setters
@@ -75,11 +84,11 @@ public class PlayerEntity {
         this.nickname = nickname;
     }
 
-    public short getCooldown() {
+    public int getCooldown() {
         return cooldown;
     }
 
-    public void setCooldown(short cooldown) {
+    public void setCooldown(int cooldown) {
         this.cooldown = cooldown;
     }
 
@@ -89,5 +98,13 @@ public class PlayerEntity {
 
     public void setParticlesActive(boolean particlesActive) {
         this.particlesActive = particlesActive;
+    }
+
+    public Instant getLastIssued() {
+        return lastIssued;
+    }
+
+    public void setLastIssued(Instant lastIssued) {
+        this.lastIssued = lastIssued;
     }
 }
