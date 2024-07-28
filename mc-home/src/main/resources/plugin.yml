@@ -2,3 +2,6 @@ name: mc-home
 version: '1.0'
 main: com.ethamorim.home.HomePlugin
 api-version: '1.21'
+commands:
+  home:
+    description: "Add a home to teleport to"

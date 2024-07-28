@@ -1,5 +1,7 @@
 package com.ethamorim.home.persistence;
 
+import com.ethamorim.home.persistence.model.HomeEntity;
+import com.ethamorim.home.persistence.model.PlayerEntity;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.tool.schema.Action;
@@ -24,16 +26,18 @@ public final class HibernateConnection {
     public static SessionFactory sessionFactory;
 
     /**
-     * Inicia uma conexão do banco de dados com o Hibernate.
+     * Registra as entidades, define as configurações, inicia a
+     * conexão com o banco de dados, e cria as tabelas necessárias.
      * Deve ser uma das primeiras rotinas a ser executada
      * para que sessionFactory se torne disponível.
      */
     public static void connect() {
         var configuration = new Configuration()
+                .addAnnotatedClass(PlayerEntity.class)
+                .addAnnotatedClass(HomeEntity.class)
                 .setProperty(JAKARTA_JDBC_DRIVER, "org.mariadb.jdbc.Driver")
-                .setProperty(JAKARTA_HBM2DDL_DATABASE_ACTION, Action.CREATE)
+                .setProperty(JAKARTA_HBM2DDL_DATABASE_ACTION, Action.UPDATE)
                 .setProperty("hibernate.agroal.maxSize", 5);
         sessionFactory = configuration.buildSessionFactory();
-        sessionFactory.getSchemaManager().exportMappedObjects(true);
     }
 }

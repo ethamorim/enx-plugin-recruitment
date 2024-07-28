@@ -10,4 +10,4 @@ import java.io.Serializable;
  *
  * @author ethamorim
  */
-public record HomeLocation(float x, float y, float z) implements Serializable {}
+public record HomeLocation(double x, double y, double z) implements Serializable {}

@@ -90,7 +90,7 @@ public class PersistenceTest {
             var home = new HomeEntity();
             home.setName("casa");
             home.setPlayer(player);
-            home.setLocation(new HomeLocation(0f, 0f, 0f));
+            home.setLocation(new HomeLocation(0, 0, 0));
 
             session.persist(player);
             session.persist(home);
