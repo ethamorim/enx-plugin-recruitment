@@ -1,0 +1,9 @@
+name: betterwindcharge
+version: '1.0'
+main: com.ethamorim.betterwindcharge.BetterWindChargePlugin
+api-version: '1.21'
+commands:
+  windcharge:
+    description: "Change the functionality of the Wind Charge"
+    usage: "/windcharge [set|give] <property> <value>"
+    aliases: [wc]
