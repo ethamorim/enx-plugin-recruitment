@@ -34,7 +34,7 @@ e para ativar efeitos de partículas ao se teletransportar.
 Para o desenvolvimento do plugin foi utilizado:
 - Java 21
 - Hibernate
-- Gradle 8.5
+- Gradle 8.9
 - Spigot 1.21
 - Redis 6.2
 - MariaDB
