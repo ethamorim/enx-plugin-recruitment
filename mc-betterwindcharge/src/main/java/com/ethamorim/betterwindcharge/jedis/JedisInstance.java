@@ -3,6 +3,9 @@ package com.ethamorim.betterwindcharge.jedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.io.IOException;
+import java.util.Properties;
+
 /**
  * Classe utilitária para auxilio no uso da biblioteca Jedis.
  *
@@ -11,12 +14,21 @@ import redis.clients.jedis.JedisPool;
 public class JedisInstance {
 
     private static Jedis jedis;
-
     private JedisInstance() {}
 
     public static void connect() {
-        try (JedisPool jedisPool = new JedisPool("bwc-redis", 6379)) {
-            jedis = jedisPool.getResource();
+        try {
+            var props = new Properties();
+            try (var input = JedisInstance.class.getResourceAsStream("/.env")) {
+                props.load(input);
+            }
+            String HOST = (String) props.get("REDIS_HOST");
+            int PORT = Integer.parseInt((String) props.get("REDIS_PORT"));
+            try (JedisPool jedisPool = new JedisPool(HOST, PORT)) {
+                jedis = jedisPool.getResource();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
