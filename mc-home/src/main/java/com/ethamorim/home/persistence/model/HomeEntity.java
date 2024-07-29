@@ -28,7 +28,6 @@ public class HomeEntity {
      * Utilizado junto com `player` para identificar a home.
      */
     @NaturalId
-    @Column(unique = false)
     String name;
 
     /**

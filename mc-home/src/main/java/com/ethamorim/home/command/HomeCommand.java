@@ -57,24 +57,56 @@ public class HomeCommand implements CommandExecutor {
             try {
                 if (args.length == 0) throw new CommandException("Invalid command syntax: /home <name>");
 
+                /*
+                    Resgata o registro do jogador no banco de dados.
+                    É esperado que esse registro sempre exista,
+                    visto que o jogador é inserido no banco de dados na primeira
+                    vez em que entra o servidor.
+                    Sem isso, nenhuma operação nesse método é viável.
+                 */
                 var playerEntity = sessionFactory.fromSession(session ->
                         PluginQueries.getPlayerByNaturalId(session, playerSender.getName()))
                         .orElseThrow();
 
-                if (playerEntity.getLastIssued() != null) {
-                    var canIssue = CooldownChecker.canIssueCommandFromNow(
-                            playerEntity.getLastIssued(),
-                            playerEntity.getCooldown()
-                    );
-                    if (!canIssue) throw new CommandException("Wait for cooldown!");
-                }
+                var operation = args[0];
+                if (operation.equals("set")) {
+                    if (args.length != 2)
+                        throw new CommandException("Invalid command syntax: /home set <name>");
 
-                if (args[0].equals("set")) {
-                    if (args.length != 2) throw new CommandException("Invalid command syntax: /home set <name>");
-                    return setNewHome(playerSender, playerEntity, args[1]);
+                    var name = args[1];
+                    setNewHome(playerSender.getLocation(), playerEntity, name);
+                    playerSender.sendMessage(ChatColor.GREEN + "New home created with name " + name);
+                } else if (operation.equals("cooldown")) {
+                    if (args.length != 2)
+                        throw new CommandException("Invalid command syntax: /home cooldown <seconds>");
+
+                    var seconds = args[1];
+                    setCooldown(playerEntity, seconds);
+                    playerSender.sendMessage(ChatColor.GREEN + "Cooldown set to " + seconds + " seconds");
+                } else if (operation.equals("particles")) {
+                    if (args.length != 2)
+                        throw new CommandException("Invalid command syntax: /home particles [true|false]");
+
+                    var status = args[1];
+                    var message = setParticlesStatus(playerEntity, status);
+                    playerSender.sendMessage(ChatColor.GREEN + message);
                 } else {
-                    return accessHome(playerSender, playerEntity, args[0]);
+                    /*
+                        A condição abaixo evita que o método seja interrompido,
+                        caso o atributo `lastIssued` seja `null`.
+                        Pois mesmo que `lastIssued` não esteja definido, será
+                        definido a seguir.
+                     */
+                    if (playerEntity.getLastIssued() != null) {
+                        var canIssue = CooldownChecker.canIssueCommandFromNow(
+                                playerEntity.getLastIssued(),
+                                playerEntity.getCooldown()
+                        );
+                        if (!canIssue) throw new CommandException("Wait for cooldown!");
+                    }
+                    accessHome(playerSender, playerEntity, args[0]);
                 }
+                return true;
             } catch (CommandException e) {
                 sender.sendMessage(ChatColor.RED + e.getMessage());
             } catch (NoSuchElementException e) {
@@ -87,8 +119,8 @@ public class HomeCommand implements CommandExecutor {
     /**
      * Responsável por registrar uma nova home.
      */
-    private boolean setNewHome(
-            Player playerSender,
+    private void setNewHome(
+            Location senderLocation,
             PlayerEntity playerRecord,
             String name
     ) {
@@ -103,27 +135,64 @@ public class HomeCommand implements CommandExecutor {
                 newHome.setName(name);
                 newHome.setPlayer(playerRecord);
 
-                var location = playerSender.getLocation();
                 newHome.setLocation(new HomeLocation(
-                        location.getX(),
-                        location.getY(),
-                        location.getZ()
+                        senderLocation.getX(),
+                        senderLocation.getY(),
+                        senderLocation.getZ()
                 ));
 
                 session.persist(newHome);
                 session.flush();
             });
-            playerSender.sendMessage(ChatColor.GREEN + "New home created with name " + name);
-            return true;
         } catch (EntityExistsException e) {
             throw new CommandException("Something went wrong: " + e.getMessage());
         }
     }
 
     /**
+     * Define um novo valor em segundos para o cooldown do jogador,
+     * que por sua vez é salva em milisegundos.
+     */
+    private void setCooldown(PlayerEntity playerEntity, String secondsArg) {
+        try {
+            var seconds = Integer.parseInt(secondsArg);
+            if (seconds < 2 || seconds > 30) {
+                throw new CommandException("Cooldown should be greater than 2 and less than 30");
+            }
+            var milli = seconds * 1000;
+            sessionFactory.inTransaction(session -> {
+                playerEntity.setCooldown(milli);
+                session.merge(playerEntity);
+                session.flush();
+            });
+        } catch (NumberFormatException e) {
+            throw new CommandException("Invalid argument for given operation");
+        }
+    }
+
+    /**
+     * Ativa ou desativa as partículas de teletransporte.
+     */
+    private String setParticlesStatus(PlayerEntity playerEntity, String statusArg) {
+        if (statusArg.equalsIgnoreCase("true") || statusArg.equalsIgnoreCase("false")) {
+            var status = Boolean.parseBoolean(statusArg);
+            sessionFactory.inTransaction(session -> {
+                playerEntity.setParticlesActive(status);
+                session.merge(playerEntity);
+                session.flush();
+            });
+            return status
+                    ? "Particles are now activated"
+                    : "Particles are now deactivated";
+        } else {
+            throw new CommandException("Invalid argument for given operation");
+        }
+    }
+
+    /**
      * Responsável por teleportar o jogador à home desejada.
      */
-    private boolean accessHome(
+    private void accessHome(
             Player playerSender,
             PlayerEntity playerEntity,
             String name
@@ -149,6 +218,10 @@ public class HomeCommand implements CommandExecutor {
                         30);
             }
 
+            /*
+                A tarefa registrada teleporta o jogador apenas
+                após 20 ticks (1s).
+             */
             Bukkit.getScheduler().runTaskLater(main, () -> {
                 world.playSound(
                         playerCurrentLocation,
@@ -165,9 +238,8 @@ public class HomeCommand implements CommandExecutor {
                         savedLocation.z())
                 );
             }, 20);
-            return true;
         } catch (NoSuchElementException e) {
-            throw new CommandException("Operation failed while trying to access home");
+            throw new CommandException("Something went wrong: Operation failed while trying to access home");
         }
     }
 }
